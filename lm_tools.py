@@ -318,11 +318,11 @@ def compute_bleu(net, word_dict, index_dict, IM, prog, k=1, maxlen=50, lm=None, 
     """
     print '\nComputing BLEU...'
     saveloc = './data/' + net.name + '_bleu_' + str(k) + '_offdev'
-    print saveloc
+    # print saveloc
     captions = []
     for i in range(0, len(IM[:prog['_neval']]), 1):
         c = beam_search(net, word_dict, index_dict, maxlen, IM[i], k=k, N=1, lm=lm, beta=beta, rerank=rerank)[0]
-        print (i, ' '.join(c))
+        # print (i, ' '.join(c))
         captions.append(c)
     f = open(saveloc, 'wb')
     for c in captions:

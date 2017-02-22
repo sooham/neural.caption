@@ -31,7 +31,7 @@ def trainer(z, zd):
     d['momentum'] = 0.23        # TODO: change this
 
     d['batch_size'] = 40
-    d['maxepoch'] = 1           # TODO: change this to 10
+    d['maxepoch'] = 10
     d['hidden_size'] = 441
 
     d['word_decay'] = 3e-7      # check this with paper
@@ -49,9 +49,9 @@ def trainer(z, zd):
     # it is measured by the number of iteration in terms of pts
     prog = {}
     prog['_details'] = 100   # How often to display training details (every 5)
-    prog['_samples'] = 2000  # How often to display samples (every 100)
+    prog['_samples'] = 2000  # How often to display samples (every 50)
     prog['_update'] = 50000  # How often to update learning rate schedule (every 1250)
-    prog['_bleu'] = 2000     # How often to compute BLEU
+    prog['_bleu'] = 1000     # How often to compute BLEU
     prog['_neval'] = 250      # How many development images to evaluate
     prog['_evaldev'] = True   # Use development set reference captions for eval
     prog['_show_browser'] = False   # Show example validation in browser

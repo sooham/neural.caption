@@ -11,6 +11,90 @@ from scipy.sparse import vstack
 from autograd import grad
 
 
+def test_MLBL_implementation():
+    """ Test Your Implementation of Forward and Backward """
+
+    import coco_proc
+    import trainer
+    import cPickle as pickle
+
+    z, zd, zt = coco_proc.process(context=5)
+
+    d = {}
+    d['name'] = 'testrun'
+    d['loc'] = 'models/mlbl_model.pkl'
+    d['context'] = 5
+    d['learning_rate'] = 0.43
+    d['momentum'] = 0.23
+    d['batch_size'] = 40
+    d['maxepoch'] = 10
+    d['hidden_size'] = 441
+    d['word_decay'] = 3e-7
+    d['context_decay'] = 1e-8
+    d['factors'] = 50
+
+    # Load the word embeddings
+    embed_map = trainer.load_embeddings()
+
+    # Unpack some stuff from the data
+    train_ngrams = z['ngrams']
+    train_labels = z['labels']
+    train_instances = z['instances']
+    word_dict = z['word_dict']
+    index_dict = z['index_dict']
+    context = z['context']
+    vocabsize = len(z['word_dict'])
+    trainIM = z['IM']
+    train_index = z['index']
+
+    net = MLBL(name=d['name'],
+                    loc=d['loc'],
+                    seed=1234,
+                    V=vocabsize,
+                    K=100,
+                    D=trainIM.shape[1],
+                    h=d['hidden_size'],
+                    context=d['context'],
+                    batchsize=1,
+                    maxepoch=d['maxepoch'],
+                    eta_t=d['learning_rate'],
+                    gamma_r=d['word_decay'],
+                    gamma_c=d['context_decay'],
+                    f=0.99,
+                    p_i=d['momentum'],
+                    p_f=d['momentum'],
+                    T=20.0,
+                    verbose=1
+                    )
+
+    # Train the network
+    X = train_instances
+    indX = train_index
+    Y = train_labels
+
+    net.init_params(embed_map, index_dict)
+
+    context_size = d['context']
+    batchX = X[0:context_size]
+    batchY = Y[0:context_size].toarray()
+    batchindX = indX[0:context_size].astype(int).flatten()
+    batchindX = np.floor(batchindX/5).astype(int)
+    batchIm = trainIM[batchindX]
+
+    # check forward implementation
+    ft = net.forward(net.params, batchX, batchIm, test=True)
+
+    # load gt feature
+    ft_gt = pickle.load(open("data/val_implementation.p", "rb"))
+
+    # it should be less than 1.0e-5
+    print 'Difference (L2 norm) between implemented and ground truth feature = {}'.format(np.linalg.norm(ft_gt - ft))
+
+
+
+
+
+
 class MLBL(object):
     """
     Multimodal Log-bilinear language model trained using SGD
@@ -283,12 +367,12 @@ class MLBL(object):
         count = 0
         done = False
 
-        plt.figure(figsize=(10, 10))
-        plt.title('validation BLEU score and CE loss on minibatches.')
 
         bleu_score_valid = []
         bleu_score_valid_x = []
+
         ce_loss_train = []
+        ce_loss_train_x = []
 
         # Main loop
         lm_tools.display_phase(1)
@@ -314,6 +398,7 @@ class MLBL(object):
                 self.update_params(batchX)
 
                 ce_loss_train.append(loss_val)
+                ce_loss_train_x.append(minibatch + epoch * numbatches)
 
                 if np.isnan(loss_val):
                     print 'NaNs... breaking out'
@@ -322,7 +407,7 @@ class MLBL(object):
 
                 # Print out progress
                 if np.mod(minibatch * self.batchsize, prog['_details']) == 0 and minibatch > 0:
-                    print "epoch/ batch (1558): %04d/%04d, CE loss batch: %.2f" % (epoch+1, minibatch + 1, loss_val)
+                    print "epoch/ batch (%d): %04d/%04d, CE loss batch: %.2f" % (numbatches, epoch+1, minibatch + 1, loss_val)
 
                 if np.mod(minibatch * self.batchsize, prog['_samples']) == 0 and minibatch > 0:
                     # show BLEU scores, and HTML window samples
@@ -344,7 +429,7 @@ class MLBL(object):
                     bleu = lm_tools.compute_bleu(self, word_dict, count_dict, VIM, prog, k=3)
 
                     bleu_score_valid.append(bleu[-1])
-                    bleu_score_valid_x.append(minibatch * self.batchsize + epoch * len(inds))
+                    bleu_score_valid_x.append(minibatch + epoch * numbatches)
 
                     if bleu[-1] >= best:
                         count = 0
@@ -361,94 +446,21 @@ class MLBL(object):
             self.update_hyperparams()
             self.step += 1
 
-            bleu_plot, = plt.plot(bleu_score_valid_x, bleu_score_valid, 'go', label='BLEU validation')
-            ce_plot, = plt.plot(ce_loss_train, 'ro', label='CE minibatch')
-            plt.legend(handles=[bleu_plot, ce_plot])
-            # save the figure
-            plt.savefig('training_momentum_%.5f_learning_%.5f.png' % (self.pi, self.eta_t), bbox_inches='tight')
+        plt.figure(figsize=(10, 10))
+        plt.title('validation BLEU score and CE loss on minibatches.')
+        plt.xlabel('mini-batch number')
+
+        bleu_plot, = plt.plot(bleu_score_valid_x, bleu_score_valid, c='blue', label='BLEU validation')
+        ce_plot, = plt.plot(ce_loss_train_x, ce_loss_train, c='red', label='CE minibatch')
+        plt.legend(handles=[bleu_plot, ce_plot])
+
+
+
+        # save the figure
+        plt.savefig('training_momentum_%.5f_learning_%.5f.png' % (self.p_i, self.eta_t), bbox_inches='tight')
 
         return best
 
-
-
-def test_MLBL_implementation():
-    """ Test Your Implementation of Forward and Backward """
-
-    import coco_proc
-    import trainer
-    import cPickle as pickle
-
-    z, zd, zt = coco_proc.process(context=5)
-
-    d = {}
-    d['name'] = 'testrun'
-    d['loc'] = 'models/mlbl_model.pkl'
-    d['context'] = 5
-    d['learning_rate'] = 0.43
-    d['momentum'] = 0.23
-    d['batch_size'] = 40
-    d['maxepoch'] = 10
-    d['hidden_size'] = 441
-    d['word_decay'] = 3e-7
-    d['context_decay'] = 1e-8
-    d['factors'] = 50
-
-    # Load the word embeddings
-    embed_map = trainer.load_embeddings()
-
-    # Unpack some stuff from the data
-    train_ngrams = z['ngrams']
-    train_labels = z['labels']
-    train_instances = z['instances']
-    word_dict = z['word_dict']
-    index_dict = z['index_dict']
-    context = z['context']
-    vocabsize = len(z['word_dict'])
-    trainIM = z['IM']
-    train_index = z['index']
-
-    net = MLBL(name=d['name'],
-                    loc=d['loc'],
-                    seed=1234,
-                    V=vocabsize,
-                    K=100,
-                    D=trainIM.shape[1],
-                    h=d['hidden_size'],
-                    context=d['context'],
-                    batchsize=1,
-                    maxepoch=d['maxepoch'],
-                    eta_t=d['learning_rate'],
-                    gamma_r=d['word_decay'],
-                    gamma_c=d['context_decay'],
-                    f=0.99,
-                    p_i=d['momentum'],
-                    p_f=d['momentum'],
-                    T=20.0,
-                    verbose=1
-                    )
-
-    # Train the network
-    X = train_instances
-    indX = train_index
-    Y = train_labels
-
-    net.init_params(embed_map, index_dict)
-
-    context_size = d['context']
-    batchX = X[0:context_size]
-    batchY = Y[0:context_size].toarray()
-    batchindX = indX[0:context_size].astype(int).flatten()
-    batchindX = np.floor(batchindX/5).astype(int)
-    batchIm = trainIM[batchindX]
-
-    # check forward implementation
-    ft = net.forward(net.params, batchX, batchIm, test=True)
-
-    # load gt feature
-    ft_gt = pickle.load(open("data/val_implementation.p", "rb"))
-
-    # it should be less than 1.0e-5
-    print 'Difference (L2 norm) between implemented and ground truth feature = {}'.format(np.linalg.norm(ft_gt - ft))
 
 if __name__ == '__main__':
 
