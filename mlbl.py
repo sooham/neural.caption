@@ -361,8 +361,8 @@ class MLBL(object):
             self.update_hyperparams()
             self.step += 1
 
-            bleu_plot = plt.plot(bleu_score_valid_x, bleu_score_valid, 'go', label='BLEU validation')
-            ce_plot = plt.plot(ce_loss_train, 'ro', label='CE minibatch')
+            bleu_plot, = plt.plot(bleu_score_valid_x, bleu_score_valid, 'go', label='BLEU validation')
+            ce_plot, = plt.plot(ce_loss_train, 'ro', label='CE minibatch')
             plt.legend(handles=[bleu_plot, ce_plot])
             # save the figure
             plt.savefig('training_momentum_%.5f_learning_%.5f.png' % (self.pi, self.eta_t), bbox_inches='tight')
