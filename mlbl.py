@@ -402,6 +402,7 @@ class MLBL(object):
 
                 if np.isnan(loss_val):
                     print 'NaNs... breaking out'
+                    print 'EARLY TERMINATE'
                     done = True
                     break
 
@@ -441,6 +442,7 @@ class MLBL(object):
                         count += 1
                         if count == patience:
                             done = True
+                            print 'EARLY TERMINATE'
                             break
 
             self.update_hyperparams()
@@ -457,7 +459,7 @@ class MLBL(object):
 
 
         # save the figure
-        plt.savefig('training_momentum_%.5f_learning_%.5f.png' % (self.p_i, self.eta_t), bbox_inches='tight')
+        plt.savefig('training_momentum_%.3f_learning_%.3f_%.3f.png' % (self.p_i, self.eta_t, best), bbox_inches='tight')
 
         return best
 
