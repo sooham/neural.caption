@@ -429,16 +429,17 @@ class MLBL(object):
                 if np.mod(minibatch * self.batchsize, prog['_bleu']) == 0 and minibatch > 0:
                     bleu = lm_tools.compute_bleu(self, word_dict, count_dict, VIM, prog, k=3)
 
-                    bleu_score_valid.append(bleu[-1])
                     bleu_score_valid_x.append(minibatch + epoch * numbatches)
 
                     if bleu[-1] >= best:
+                        bleu_score_valid.append(bleu[-1])
                         count = 0
                         best = bleu[-1]
                         scores = '/'.join([str(b) for b in bleu])
                         print 'bleu score = {}'.format(bleu[-1])
                         lm_tools.save_model(self, self.loc)
                     else:
+                        bleu_score_valid.append(best)
                         count += 1
                         if count == patience:
                             done = True
@@ -452,7 +453,7 @@ class MLBL(object):
         plt.title('validation BLEU score and CE loss on minibatches.')
         plt.xlabel('mini-batch number')
 
-        bleu_plot, = plt.plot(bleu_score_valid_x, bleu_score_valid, c='blue', label='BLEU validation')
+        bleu_plot, = plt.plot(bleu_score_valid_x, bleu_score_valid, c='blue', label='max BLEU score')
         ce_plot, = plt.plot(ce_loss_train_x, ce_loss_train, c='red', label='CE minibatch')
         plt.legend(handles=[bleu_plot, ce_plot])
 
