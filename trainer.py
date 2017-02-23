@@ -48,6 +48,8 @@ def trainer(z, zd):
     # Progress display and update times
     # it is measured by the number of iteration in terms of pts
     prog = {}
+
+    # formula (60000 / num) per batch
     prog['_details'] = 100   # How often to display training details (every 5)
     prog['_samples'] = 2000  # How often to display samples (every 50)
     prog['_update'] = 50000  # How often to update learning rate schedule (every 1250)
