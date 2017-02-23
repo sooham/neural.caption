@@ -363,7 +363,7 @@ class MLBL(object):
         bleu = [0.0]*4
         best = 0.0
         scores = '/'.join([str(b) for b in bleu])
-        patience = 100
+        patience = 10
         count = 0
         done = False
 
