@@ -27,8 +27,8 @@ def trainer(z, zd):
     d['loc'] = 'models/mlbl_model.pkl'
     d['context'] = 5
 
-    d['learning_rate'] = 0.43   # TODO: change this
-    d['momentum'] = 0.23        # TODO: change this
+    d['learning_rate'] = 0.80   # TODO: change this
+    d['momentum'] = 0.0        # TODO: change this
 
     d['batch_size'] = 40
     d['maxepoch'] = 10
@@ -53,7 +53,7 @@ def trainer(z, zd):
     prog['_details'] = 100   # How often to display training details (every 5)
     prog['_samples'] = 2000  # How often to display samples (every 50)
     prog['_update'] = 50000  # How often to update learning rate schedule (every 1250)
-    prog['_bleu'] = 1000     # How often to compute BLEU
+    prog['_bleu'] = 10000     # How often to compute BLEU
     prog['_neval'] = 250      # How many development images to evaluate
     prog['_evaldev'] = True   # Use development set reference captions for eval
     prog['_show_browser'] = False   # Show example validation in browser
