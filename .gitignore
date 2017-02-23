@@ -1,8 +1,9 @@
 *.pdf
-*.png
+*.pyc
 *.ipynb
 .ipynb_checkpoints
 html
 models
 *.swp
+trainer.py
 
